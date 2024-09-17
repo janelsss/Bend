@@ -1,5 +1,8 @@
 const express = require('express');
-const cors = require('cors'); // Import the cors module
+const cors = require('cors');
+const mongoose = require('mongoose');
+require('dotenv').config(); // Load environment variables from .env file
+
 const app = express();
 
 // Use the cors middleware
@@ -8,92 +11,129 @@ app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-const studentData = [];
+// MongoDB connection
+const mongoUri = process.env.MONGO_URI;
+mongoose.connect(mongoUri, { useNewUrlParser: true, useUnifiedTopology: true })
+    .then(() => console.log('MongoDB connected successfully'))
+    .catch(err => console.error('MongoDB connection error:', err));
 
-const port = 3000;
-app.listen(port, () => {
-    console.log(`Server is running on port ${port}`);
+// Define a Student model
+const studentSchema = new mongoose.Schema({
+    firstname: String,
+    lastname: String,
+    course: String,
+    year: Number,
+    enrolled: Boolean,
 });
 
+const Student = mongoose.model('Student', studentSchema);
+
 // POST API
-app.post('/api/add_student', (req, res) => {
+app.post('/api/add_student', async(req, res) => {
     console.log('Request Body:', req.body);
 
-    const sdata = {
-        id: studentData.length + 1,
-        firstname: req.body.firstname,
-        lastname: req.body.lastname,
-        course: req.body.course,
-        year: req.body.year,
-        enrolled: req.body.enrolled === 'true',
-    };
+    try {
+        const student = new Student({
+            firstname: req.body.firstname,
+            lastname: req.body.lastname,
+            course: req.body.course,
+            year: req.body.year,
+            enrolled: req.body.enrolled === 'true',
+        });
 
-    studentData.push(sdata);
-    console.log('Student Added:', sdata);
+        await student.save();
 
-    res.status(200).send({
-        statusCode: 200,
-        message: 'Student has been added successfully',
-        student: sdata,
-    });
+        console.log('Student Added:', student);
+
+        res.status(200).send({
+            statusCode: 200,
+            message: 'Student has been added successfully',
+            student: student,
+        });
+    } catch (err) {
+        console.error('Error adding student:', err);
+        res.status(500).send({
+            statusCode: 500,
+            message: 'Error adding student',
+        });
+    }
 });
 
 // GET API
-app.get('/api/get_student', (req, res) => {
-    if (studentData.length > 0) {
+app.get('/api/get_student', async(req, res) => {
+    try {
+        const students = await Student.find();
         res.status(200).send({
             statusCode: 200,
-            students: studentData,
+            students: students,
         });
-    } else {
-        res.status(200).send({
-            statusCode: 200,
-            students: [],
+    } catch (err) {
+        console.error('Error fetching students:', err);
+        res.status(500).send({
+            statusCode: 500,
+            message: 'Error fetching students',
         });
     }
 });
 
 // UPDATE API
-app.put('/api/update_student/:id', (req, res) => {
-    const id = parseInt(req.params.id);
-    const studentIndex = studentData.findIndex(student => student.id === id);
-
-    if (studentIndex !== -1) {
-        studentData[studentIndex] = {
-            ...studentData[studentIndex],
+app.put('/api/update_student/:id', async(req, res) => {
+    const id = req.params.id;
+    try {
+        const student = await Student.findByIdAndUpdate(id, {
             ...req.body,
             enrolled: req.body.enrolled === 'true',
-        };
+        }, { new: true });
 
-        res.status(200).send({
-            statusCode: 200,
-            message: 'Student Information Successfully Updated',
-            student: studentData[studentIndex],
-        });
-    } else {
-        res.status(404).send({
-            statusCode: 404,
-            message: 'Student not found',
+        if (student) {
+            res.status(200).send({
+                statusCode: 200,
+                message: 'Student Information Successfully Updated',
+                student: student,
+            });
+        } else {
+            res.status(404).send({
+                statusCode: 404,
+                message: 'Student not found',
+            });
+        }
+    } catch (err) {
+        console.error('Error updating student:', err);
+        res.status(500).send({
+            statusCode: 500,
+            message: 'Error updating student',
         });
     }
 });
 
 // DELETE API
-app.delete('/api/delete_student/:id', (req, res) => {
-    const id = parseInt(req.params.id);
-    const studentIndex = studentData.findIndex(student => student.id === id);
-
-    if (studentIndex !== -1) {
-        const deletedStudent = studentData.splice(studentIndex, 1);
-        res.status(200).send({
-            statusCode: 200,
-            message: 'Student successfully deleted',
-            student: deletedStudent[0],
-        });
-    } else {
-        res.status(404).send({
-            statusCode: 404,
-            message: 'Student not found',
+app.delete('/api/delete_student/:id', async(req, res) => {
+    const id = req.params.id;
+    try {
+        const student = await Student.findByIdAndDelete(id);
+        if (student) {
+            res.status(200).send({
+                statusCode: 200,
+                message: 'Student successfully deleted',
+                student: student,
+            });
+        } else {
+            res.status(404).send({
+                statusCode: 404,
+                message: 'Student not found',
+            });
+        }
+    } catch (err) {
+        console.error('Error deleting student:', err);
+        res.status(500).send({
+            statusCode: 500,
+            message: 'Error deleting student',
         });
     }
 });
+
+const port = process.env.PORT || 3000;
+app.listen(port, () => {
+    console.log(`Server is running on port ${port}`);
+});
+// mongodb+srv://janylleborje7:<db_password>@crud.86vyl.mongodb.net/?retryWrites=true&w=majority&appName=Crud

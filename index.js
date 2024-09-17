@@ -1,23 +1,23 @@
 const express = require('express');
 const cors = require('cors');
 const mongoose = require('mongoose');
-require('dotenv').config(); // Load environment variables from .env file
+require('dotenv').config();
 
 const app = express();
 
-// Use the cors middleware
+
 app.use(cors());
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// MongoDB connection
+
 const mongoUri = process.env.MONGO_URI;
-mongoose.connect(mongoUri, { useNewUrlParser: true, useUnifiedTopology: true })
+mongoose.connect(mongoUri)
     .then(() => console.log('MongoDB connected successfully'))
     .catch(err => console.error('MongoDB connection error:', err));
 
-// Define a Student model
+
 const studentSchema = new mongoose.Schema({
     firstname: String,
     lastname: String,
@@ -28,12 +28,12 @@ const studentSchema = new mongoose.Schema({
 
 const Student = mongoose.model('Student', studentSchema);
 
-// Redirect from root to /api/v1/student
+
 app.get('/', (req, res) => {
-    res.redirect('/api/v1/student');
+    res.redirect('/api/get_student');
 });
 
-// POST API
+
 app.post('/api/add_student', async(req, res) => {
     console.log('Request Body:', req.body);
 
@@ -64,7 +64,7 @@ app.post('/api/add_student', async(req, res) => {
     }
 });
 
-// GET API
+
 app.get('/api/get_student', async(req, res) => {
     try {
         const students = await Student.find();
@@ -81,7 +81,7 @@ app.get('/api/get_student', async(req, res) => {
     }
 });
 
-// UPDATE API
+
 app.put('/api/update_student/:id', async(req, res) => {
     const id = req.params.id;
     try {
@@ -111,7 +111,7 @@ app.put('/api/update_student/:id', async(req, res) => {
     }
 });
 
-// DELETE API
+
 app.delete('/api/delete_student/:id', async(req, res) => {
     const id = req.params.id;
     try {
@@ -136,10 +136,16 @@ app.delete('/api/delete_student/:id', async(req, res) => {
         });
     }
 });
+
 app.get('/', (req, res) => {
     res.redirect('/api/get_student');
 });
+
 const port = process.env.PORT || 3000;
-app.listen(port, () => {
-    console.log(`Server is running on port ${port}`);
+app.listen(port, (err) => {
+    if (err) {
+        console.error('Error starting the server:', err);
+    } else {
+        console.log(`Server is running on port ${port}`);
+    }
 });

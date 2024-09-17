@@ -156,7 +156,7 @@ app.delete('/api/delete_student/:id', async(req, res) => {
 });
 
 app.get('/', (req, res) => {
-    res.redirect('/api/get_student');
+    res.redirect('/api/getstudent');
 });
 
 const port = process.env.PORT || 3000;

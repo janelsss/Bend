@@ -133,7 +133,9 @@ app.delete('/api/delete_student/:id', async(req, res) => {
 });
 
 const port = process.env.PORT || 3000;
+app.get('/', (req, res) => {
+    res.redirect('/api/v1/student');
+});
 app.listen(port, () => {
     console.log(`Server is running on port ${port}`);
 });
-// mongodb+srv://janylleborje7:<db_password>@crud.86vyl.mongodb.net/?retryWrites=true&w=majority&appName=Crud

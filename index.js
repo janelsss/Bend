@@ -12,10 +12,28 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 
-const mongoUri = process.env.MONGO_URI;
-mongoose.connect(mongoUri)
-    .then(() => console.log('MongoDB connected successfully'))
-    .catch(err => console.error('MongoDB connection error:', err));
+const connectDB = (url) => {
+
+    if (!url) {
+        throw new NotFoundError("No Database URL Found");
+    }
+    return url.replace('<db_password>', process.env.MONGO_PASSWORD);
+};
+
+const connectToDatabase = async() => {
+
+    const dbURL = connectDB(process.env.MONGO_EMAIL);
+
+    try {
+        mongoose
+            .connect(dbURL)
+            .then(() => console.log('Database connection is successful'));
+
+
+    } catch (error) {
+        res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({ message: error.message });
+    }
+};
 
 
 const studentSchema = new mongoose.Schema({

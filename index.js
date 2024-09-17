@@ -136,7 +136,9 @@ app.delete('/api/delete_student/:id', async(req, res) => {
         });
     }
 });
-
+app.get('/', (req, res) => {
+    res.redirect('/api/get_student');
+});
 const port = process.env.PORT || 3000;
 app.listen(port, () => {
     console.log(`Server is running on port ${port}`);

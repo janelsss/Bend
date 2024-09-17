@@ -83,7 +83,7 @@ app.post('/api/add_student', async(req, res) => {
 });
 
 
-app.get('/api/get_student', async(req, res) => {
+app.get('/api/getstudent', async(req, res) => {
     try {
         const students = await Student.find();
         res.status(200).send({

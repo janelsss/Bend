@@ -5,27 +5,36 @@ require('dotenv').config();
 
 const app = express();
 
+
 app.use(cors());
+
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+
 const connectDB = (url) => {
+
     if (!url) {
-        throw new Error("No Database URL Found");
+        throw new NotFoundError("No Database URL Found");
     }
     return url.replace('<db_password>', process.env.MONGO_PASSWORD);
 };
 
 const connectToDatabase = async() => {
+
     const dbURL = connectDB(process.env.MONGO_EMAIL);
+
     try {
-        await mongoose.connect(dbURL);
-        console.log('Database connection is successful');
+        mongoose
+            .connect(dbURL)
+            .then(() => console.log('Database connection is successful'));
+
+
     } catch (error) {
-        console.error('Database connection failed:', error);
-        throw error; // Propagate the error
+        res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({ message: error.message });
     }
 };
+
 
 const studentSchema = new mongoose.Schema({
     firstname: String,
@@ -37,9 +46,11 @@ const studentSchema = new mongoose.Schema({
 
 const Student = mongoose.model('Student', studentSchema);
 
+
 app.get('/', (req, res) => {
     res.redirect('/api/getstudent');
 });
+
 
 app.post('/api/add_student', async(req, res) => {
     console.log('Request Body:', req.body);
@@ -54,6 +65,7 @@ app.post('/api/add_student', async(req, res) => {
         });
 
         await student.save();
+
         console.log('Student Added:', student);
 
         res.status(200).send({
@@ -70,24 +82,13 @@ app.post('/api/add_student', async(req, res) => {
     }
 });
 
+
 app.get('/api/getstudent', async(req, res) => {
-    const page = parseInt(req.query.page) || 1;
-    const limit = parseInt(req.query.limit) || 10; // Default limit to 10
-    const skip = (page - 1) * limit;
-
-    console.log('GET /api/getstudent request received');
-
     try {
-        const students = await Student.find().skip(skip).limit(limit);
-        const count = await Student.countDocuments();
-
-        console.log(`Fetched ${students.length} students`);
-
+        const students = await Student.find();
         res.status(200).send({
             statusCode: 200,
             students: students,
-            totalPages: Math.ceil(count / limit),
-            currentPage: page,
         });
     } catch (err) {
         console.error('Error fetching students:', err);
@@ -97,6 +98,7 @@ app.get('/api/getstudent', async(req, res) => {
         });
     }
 });
+
 
 app.put('/api/update_student/:id', async(req, res) => {
     const id = req.params.id;
@@ -127,6 +129,7 @@ app.put('/api/update_student/:id', async(req, res) => {
     }
 });
 
+
 app.delete('/api/delete_student/:id', async(req, res) => {
     const id = req.params.id;
     try {
@@ -152,16 +155,15 @@ app.delete('/api/delete_student/:id', async(req, res) => {
     }
 });
 
-const port = process.env.PORT || 3000;
+app.get('/', (req, res) => {
+    res.redirect('/api/getstudent');
+});
 
-connectToDatabase()
-    .then(() => {
-        app.listen(port, (err) => {
-            if (err) {
-                console.error('Error starting the server:', err);
-            } else {
-                console.log(`Server is running on port ${port}`);
-            }
-        });
-    })
-    .catch(err => console.error('Failed to start the server:', err));
+const port = process.env.PORT || 3000;
+app.listen(port, (err) => {
+    if (err) {
+        console.error('Error starting the server:', err);
+    } else {
+        console.log(`Server is running on port ${port}`);
+    }
+});

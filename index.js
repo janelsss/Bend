@@ -47,7 +47,7 @@ const Student = mongoose.model('Student', studentSchema);
 
 
 app.get('/', (req, res) => {
-    res.redirect('/api/getstudent');
+    res.redirect('/api/get_student');
 });
 
 

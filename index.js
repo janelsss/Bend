@@ -13,27 +13,26 @@ app.use(express.urlencoded({ extended: true }));
 
 
 const connectDB = (url) => {
-
     if (!url) {
-        throw new NotFoundError("No Database URL Found");
+        console.error('Invalid URL');
     }
-    return url.replace('<db_password>', process.env.MONGO_PASSWORD);
+    return url
+        .replace('<db_username>', process.env.MONGO_USERNAME)
+        .replace('<db_password>', process.env.MONGO_PASSWORD);
 };
 
 const connectToDatabase = async() => {
-
-    const dbURL = connectDB(process.env.MONGO_EMAIL);
+    const dbURL = connectDB(process.env.MONGO_URL);
 
     try {
-        mongoose
-            .connect(dbURL)
-            .then(() => console.log('Database connection is successful'));
+        await mongoose.connect(dbURL); // Removed .then() and used await
 
-
+        console.log('Database connection is successful');
     } catch (error) {
-        res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({ message: error.message });
+        console.error('Error connecting to the database:', error.message);
     }
 };
+
 
 
 const studentSchema = new mongoose.Schema({
@@ -83,7 +82,7 @@ app.post('/api/add_student', async(req, res) => {
 });
 
 
-app.get('/api/getstudent', async(req, res) => {
+app.get('/api/get_student', async(req, res) => {
     try {
         const students = await Student.find();
         res.status(200).send({
@@ -156,14 +155,19 @@ app.delete('/api/delete_student/:id', async(req, res) => {
 });
 
 app.get('/', (req, res) => {
-    res.redirect('/api/getstudent');
+    res.redirect('/api/get_student');
 });
 
 const port = process.env.PORT || 3000;
-app.listen(port, (err) => {
-    if (err) {
-        console.error('Error starting the server:', err);
-    } else {
-        console.log(`Server is running on port ${port}`);
+
+const start = async() => {
+    try {
+        await connectToDatabase();
+        app.listen(port, () =>
+            console.log(`Server is listening on port ${port}...`)
+        );
+    } catch (error) {
+        console.log(error);
     }
-});
+};
+start();

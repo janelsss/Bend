@@ -1,14 +1,1 @@
-# Node.js
-node_modules/
-*.log
-.env
-
-# macOS
-.DS_Store
-
-# Windows
-Thumbs.db
-
-# IDEs
-.vscode/
-.idea/
+/node_modules/
